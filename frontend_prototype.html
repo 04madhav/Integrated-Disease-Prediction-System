@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Prediction & Recommendation Prototype</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --primary: #22d3ee;
+            --secondary: #818cf8;
+            --danger: #f43f5e;
+            --text: #e2e8f0;
+            --text-muted: #94a3b8;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 1rem;
+        }
+        h1 {
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--secondary);
+        }
+        .stat-box.high-risk {
+            border-left-color: var(--danger);
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-top: 0.5rem;
+        }
+        button {
+            background-color: var(--primary);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            width: 100%;
+            font-size: 1rem;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        .recommendation-list {
+            list-style: none;
+            padding: 0;
+        }
+        .recommendation-list li {
+            padding-left: 1.5rem;
+            position: relative;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+        .recommendation-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .doctor-card {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .doctor-info h4 { margin: 0 0 0.5rem 0; color: var(--primary); }
+        .doctor-info p { margin: 0; font-size: 0.9rem; color: var(--text-muted); }
+        .badge {
+            padding: 0.25rem 0.5rem;
+            background: rgba(34, 211, 238, 0.1);
+            color: var(--primary);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .badge.urgent {
+            background: rgba(244, 63, 94, 0.1);
+            color: var(--danger);
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Disease Prediction System</h1>
+        <p>AI-Assisted Healthcare Navigation Engine</p>
+    </header>
+
+    <div class="card">
+        <h3>1. Simulated Disease Prediction Input</h3>
+        <p class="stat-label">Click 'Run Prediction Pipeline' to simulate a patient with elevated stroke and heart risk.</p>
+        <button id="predictBtn">Run Prediction Pipeline</button>
+    </div>
+
+    <!-- Results Section (Hidden initially) -->
+    <div id="resultsSection" class="hidden">
+        
+        <!-- Risk Scores -->
+        <div class="card">
+            <h3>Predicted Risk Scores</h3>
+            <div class="grid">
+                <div class="stat-box">
+                    <div class="stat-label">Heart Risk</div>
+                    <div class="stat-value" id="resHeart">0%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">Diabetes Risk</div>
+                    <div class="stat-value" id="resDiabetes">0%</div>
+                </div>
+                <div class="stat-box high-risk">
+                    <div class="stat-label">Stroke Risk</div>
+                    <div class="stat-value" id="resStroke" style="color: var(--danger)">0%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">CKD Risk</div>
+                    <div class="stat-value" id="resCKD">0%</div>
+                </div>
+            </div>
+            <div class="stat-box" style="margin-top: 1rem;">
+                <div class="stat-label">CHRI (Cardiometabolic Health Risk Index)</div>
+                <div class="stat-value" id="resCHRI">0.00</div>
+            </div>
+        </div>
+
+        <!-- Actionable Recommendations -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3>Recommended Actions</h3>
+                <span id="urgencyBadge" class="badge">Processing...</span>
+            </div>
+            <p class="stat-label">Based on predictive analysis, here are the next steps:</p>
+            <ul class="recommendation-list" id="actionList">
+                <li>Loading...</li>
+            </ul>
+        </div>
+
+        <!-- Doctor / Specialists -->
+        <div class="card">
+            <h3>Specialist Recommendations</h3>
+            <p class="stat-label">Top suggested doctors based on risk profile and simulated location (New York):</p>
+            <div id="doctorList">
+                <p>Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = "http://127.0.0.1:8000";
+
+    document.getElementById('predictBtn').addEventListener('click', async () => {
+        // 1. Simulate Prediction Outputs
+        const fakeRisks = {
+            heart_risk: 0.55,
+            diabetes_risk: 0.20,
+            stroke_risk: 0.85,  // Critical simulated risk
+            ckd_risk: 0.15,
+            chri_score: 0.52    // High priority
+        };
+
+        document.getElementById('resHeart').innerText = (fakeRisks.heart_risk * 100).toFixed(0) + "%";
+        document.getElementById('resDiabetes').innerText = (fakeRisks.diabetes_risk * 100).toFixed(0) + "%";
+        document.getElementById('resStroke').innerText = (fakeRisks.stroke_risk * 100).toFixed(0) + "%";
+        document.getElementById('resCKD').innerText = (fakeRisks.ckd_risk * 100).toFixed(0) + "%";
+        document.getElementById('resCHRI').innerText = fakeRisks.chri_score.toFixed(2);
+
+        document.getElementById('resultsSection').classList.remove('hidden');
+
+        // 2. Fetch Actionable Recommendations
+        try {
+            const actionRes = await fetch(`${API_BASE}/recommend/action`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fakeRisks)
+            });
+            const actionData = await actionRes.json();
+            
+            // Update UI
+            document.getElementById('urgencyBadge').innerText = "Urgency: " + actionData.urgency_level;
+            if (actionData.urgency_level === "Urgent" || actionData.urgency_level === "High Priority") {
+                document.getElementById('urgencyBadge').classList.add('urgent');
+            }
+
+            const actionListUI = document.getElementById('actionList');
+            actionListUI.innerHTML = "";
+            actionData.suggested_actions.forEach(act => {
+                let li = document.createElement('li');
+                li.innerText = act;
+                actionListUI.appendChild(li);
+            });
+
+            // 3. Chain logic: for each recommended specialist, fetch top doctor
+            const docListUI = document.getElementById('doctorList');
+            docListUI.innerHTML = "";
+            if (actionData.recommended_specialists && actionData.recommended_specialists.length > 0) {
+                // Determine highest priority disease based on array (simplification for prototype)
+                let highestRiskDisease = "";
+                if(actionData.recommended_specialists.includes("Neurologist")) highestRiskDisease = "Stroke";
+                else if(actionData.recommended_specialists.includes("Cardiologist")) highestRiskDisease = "Heart Disease";
+                else highestRiskDisease = actionData.recommended_specialists[0];
+
+                const doctorRes = await fetch(`${API_BASE}/recommend/doctors`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ disease_focus: highestRiskDisease, location: "New York" })
+                });
+                const docs = await doctorRes.json();
+                
+                docs.slice(0, 2).forEach(doc => {
+                    docListUI.innerHTML += `
+                        <div class="doctor-card">
+                            <div class="doctor-info">
+                                <h4>${doc.doctor_name}</h4>
+                                <p>${doc.specialization} • ${doc.location}</p>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="badge">★ ${doc.rating}</div>
+                                <div style="font-size: 0.8rem; margin-top: 5px; color: var(--text-muted);">Avail: ${doc.availability}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+        } catch(e) {
+            console.error("API call failed. Make sure backend is running with CORS enabled.", e);
+            document.getElementById('actionList').innerHTML = "<li>Error connecting to backend API. Please ensure python run_backend.py is active.</li>";
+        }
+    });
+</script>
+
+</body>
+</html>
